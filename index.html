@@ -2,185 +2,97 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Pickleball Scoreboard</title>
   <style>
     body {
       margin: 0;
-      background-color: black;
-    }
-    .container {
-      position: relative;
-      width: 845px;
-      height: 314px;
-      background: url('BackgroundSB.png') no-repeat center center;
+      padding: 0;
+      background: url('backgroundSB.png') no-repeat center center fixed;
       background-size: cover;
-      font-family: Arial, sans-serif;
+      font-family: sans-serif;
       color: white;
-    }
-    .text {
-      position: absolute;
-      font-weight: bold;
-      color: white;
-    }
-    .player {
-      font-size: 16px;
-    }
-    .score {
-      font-size: 64px;
-    }
-
-    #eventName { top: 20px; right: 25px; font-size: 15px; }
-    #gameLabel { top: 100px; right: 55px; font-size: 12px; opacity: 0.8; }
-    #gameScore { top: 120px; right: 25px; font-size: 16px; }
-    #currentTime { bottom: 20px; right: 25px; font-size: 16px; }
-
-    #player1 { top: 75px; right: 260px; }
-    #player2 { bottom: 75px; right: 260px; }
-    #player3 { bottom: 75px; left: 60px; }
-    #player4 { top: 75px; left: 60px; }
-
-    #score1Container { top: 100px; left: 240px; }
-    #score2Container { top: 100px; left: 340px; }
-
-    .scoreContainer {
-      position: absolute;
       text-align: center;
     }
-
-    input {
-      background: none;
-      border: none;
-      color: white;
-      font-weight: bold;
-      font-family: inherit;
-      text-align: center;
-    }
-
-    .input-small {
-      font-size: 14px;
-      width: 100px;
-    }
-
-    .input-score {
-      font-size: 64px;
-      width: 70px; /* ✅ Supports 2-digit scores */
-    }
-
-    .control {
+    .scoreboard {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
       display: flex;
-      flex-direction: column;
+      justify-content: space-around;
       align-items: center;
-      margin-top: 2px;
-      gap: 2px;
+      padding: 20px;
+      background: rgba(0,0,0,0.6);
+      font-size: 3rem;
     }
-
-    .control button,
-    .swap-btn {
-      background: rgba(255, 255, 255, 0.1);
-      border: 1px solid #ccc;
-      color: white;
-      font-weight: bold;
-      cursor: pointer;
+    .team {
+      flex: 1;
     }
-
-    .control button {
-      width: 25px;
-      height: 25px;
+    .controls button {
+      font-size: 1.5rem;
+      margin: 5px;
     }
-
-    .swap-btn {
-      position: absolute;
-      bottom: 0px;
-      left: 38%;
-      transform: translateX(-50%);
-      padding: 1px 12px;
-      font-size: 12px;
-      border-radius: 4px;
-    }
-
-    .hidden-on-led {
-      display: block;
-    }
-
-    /* Optional: Hide all buttons on LED screen by uncommenting below
-    .hidden-on-led {
-      display: none !important;
-    }
-    */
   </style>
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.24.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.24.0/firebase-database-compat.js"></script>
 </head>
 <body>
-  <div class="container">
-    <div id="eventName" class="text">
-      <input class="input-small" value="EVENT NAME" />
-    </div>
-    <div id="gameLabel" class="text">GAMES</div>
-    <div id="gameScore" class="text">
-      <input class="input-small" value="0-0, 0-0" />
-    </div>
-    <div id="currentTime" class="text">TIME</div>
-
-    <div id="player1" class="text player"><input id="p1" class="input-small" value="PLAYER 1" /></div>
-    <div id="player2" class="text player"><input id="p2" class="input-small" value="PLAYER 2" /></div>
-    <div id="player3" class="text player"><input id="p3" class="input-small" value="PLAYER 3" /></div>
-    <div id="player4" class="text player"><input id="p4" class="input-small" value="PLAYER 4" /></div>
-
-    <div id="score1Container" class="text scoreContainer">
-      <div class="score"><input id="score1" class="input-score" value="0" /></div>
-      <div class="control hidden-on-led">
-        <button onclick="adjustScore('score1', 1)">▲</button>
-        <button onclick="adjustScore('score1', -1)">▼</button>
+  <div class="scoreboard">
+    <div class="team">
+      <div>Team A: <span id="scoreA">0</span></div>
+      <div class="controls">
+        <button onclick="updateScore('A', 1)">+</button>
+        <button onclick="updateScore('A', -1)">-</button>
       </div>
     </div>
-
-    <div id="score2Container" class="text scoreContainer">
-      <div class="score"><input id="score2" class="input-score" value="0" /></div>
-      <div class="control hidden-on-led">
-        <button onclick="adjustScore('score2', 1)">▲</button>
-        <button onclick="adjustScore('score2', -1)">▼</button>
+    <div class="team">
+      <div>Team B: <span id="scoreB">0</span></div>
+      <div class="controls">
+        <button onclick="updateScore('B', 1)">+</button>
+        <button onclick="updateScore('B', -1)">-</button>
       </div>
     </div>
-
-    <button class="swap-btn hidden-on-led" onclick="swapSides()">Swap Sides</button>
   </div>
 
   <script>
-    function updateTime() {
-      const now = new Date();
-      const options = {
-        timeZone: 'America/New_York',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: true
-      };
-      const formatter = new Intl.DateTimeFormat('en-US', options);
-      document.getElementById('currentTime').textContent = formatter.format(now);
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyD_unRHQhjXS0JZ1ON-4u0KfNX4lIqNlbU",
+      authDomain: "pickleballscoreboard-a963e.firebaseapp.com",
+      databaseURL: "https://pickleballscoreboard-a963e-default-rtdb.firebaseio.com",
+      projectId: "pickleballscoreboard-a963e",
+      storageBucket: "pickleballscoreboard-a963e.appspot.com",
+      messagingSenderId: "858315041471",
+      appId: "1:858315041471:web:59bf87df2f4dae68de740a",
+      measurementId: "G-N1Y4292E8V"
+    };
+
+    // Initialize Firebase
+    const app = firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // Score elements
+    const scoreA = document.getElementById('scoreA');
+    const scoreB = document.getElementById('scoreB');
+
+    // Update score function
+    function updateScore(team, change) {
+      const ref = db.ref('scores/' + team);
+      ref.once('value').then(snapshot => {
+        let current = snapshot.val() || 0;
+        ref.set(Math.max(0, current + change));
+      });
     }
 
-    function adjustScore(id, delta) {
-      const input = document.getElementById(id);
-      let current = parseInt(input.value) || 0;
-      current = Math.max(0, current + delta);
-      input.value = current;
-    }
+    // Listen for changes
+    db.ref('scores/A').on('value', snapshot => {
+      scoreA.textContent = snapshot.val() ?? 0;
+    });
 
-    function swapSides() {
-      let tempP1 = document.getElementById('p1').value;
-      let tempP2 = document.getElementById('p2').value;
-      let tempScore1 = document.getElementById('score1').value;
-
-      document.getElementById('p1').value = document.getElementById('p4').value;
-      document.getElementById('p2').value = document.getElementById('p3').value;
-      document.getElementById('score1').value = document.getElementById('score2').value;
-
-      document.getElementById('p4').value = tempP1;
-      document.getElementById('p3').value = tempP2;
-      document.getElementById('score2').value = tempScore1;
-    }
-
-    setInterval(updateTime, 1000);
-    updateTime();
+    db.ref('scores/B').on('value', snapshot => {
+      scoreB.textContent = snapshot.val() ?? 0;
+    });
   </script>
 </body>
 </html>
