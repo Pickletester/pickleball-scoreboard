@@ -98,36 +98,11 @@
       border-radius: 4px;
     }
 
-    .hidden-on-led {
-      display: block;
-    }
-
-    /* AD overlay */
-    #adOverlay {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 845px;
-      height: 314px;
-      background: black;
-      z-index: 999;
-    }
-    #adOverlay video, #adOverlay img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .toggleAdBtn {
-      position: absolute;
-      top: 5px;
-      left: 5px;
-      font-size: 10px;
-      background: rgba(255,255,255,0.2);
-      border: 1px solid #ccc;
-      color: white;
-      z-index: 1000;
+    /* Hide controls/buttons on LED screen */
+    @media screen and (min-width: 845px) and (max-height: 314px) {
+      .hidden-on-led {
+        display: none !important;
+      }
     }
   </style>
 
@@ -168,17 +143,9 @@
     </div>
 
     <button class="swap-btn hidden-on-led" onclick="swapSides()">Swap Sides</button>
-    <button class="toggleAdBtn hidden-on-led" onclick="toggleAd()">Toggle Ad</button>
-  </div>
-
-  <!-- Ad Overlay (video or image) -->
-  <div id="adOverlay">
-    <!-- Replace with <img src="..." /> if you'd rather use an image -->
-    <video src="Pickleball%20Mag%2030%20seconds.mp4" autoplay muted loop></video>
   </div>
 
   <script>
-    // Firebase setup
     const firebaseConfig = {
       apiKey: "AIzaSyD_unRHQhjXS0JZ1ON-4u0KfNX4lIqNlbU",
       authDomain: "pickleballscoreboard-a963e.firebaseapp.com",
@@ -189,10 +156,10 @@
       appId: "1:858315041471:web:59bf87df2f4dae68de740a",
       measurementId: "G-N1Y4292E8V"
     };
+
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // Sync fields with Firebase
     const fields = {
       eventNameInput: 'eventName',
       gameScoreInput: 'gameScore',
@@ -217,6 +184,18 @@
       });
     });
 
+    function updateTime() {
+      const now = new Date();
+      const options = {
+        timeZone: 'America/New_York',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+      };
+      document.getElementById('currentTime').textContent = new Intl.DateTimeFormat('en-US', options).format(now);
+    }
+
     function adjustScore(id, delta) {
       const input = document.getElementById(id);
       let current = parseInt(input.value) || 0;
@@ -226,50 +205,20 @@
     }
 
     function swapSides() {
-      let tempP1 = document.getElementById('p1').value;
-      let tempP2 = document.getElementById('p2').value;
-      let tempScore1 = document.getElementById('score1').value;
-
-      document.getElementById('p1').value = document.getElementById('p4').value;
-      document.getElementById('p2').value = document.getElementById('p3').value;
-      document.getElementById('score1').value = document.getElementById('score2').value;
-
-      document.getElementById('p4').value = tempP1;
-      document.getElementById('p3').value = tempP2;
-      document.getElementById('score2').value = tempScore1;
-
-      Object.entries(fields).forEach(([inputId, dbKey]) => {
-        if (['p1', 'p2', 'p3', 'p4', 'score1', 'score2'].includes(inputId)) {
-          db.ref('scoreboard/' + dbKey).set(document.getElementById(inputId).value);
-        }
-      });
+      const swap = (a, b) => {
+        let temp = document.getElementById(a).value;
+        document.getElementById(a).value = document.getElementById(b).value;
+        document.getElementById(b).value = temp;
+        db.ref('scoreboard/' + a).set(document.getElementById(a).value);
+        db.ref('scoreboard/' + b).set(document.getElementById(b).value);
+      };
+      swap('p1', 'p4');
+      swap('p2', 'p3');
+      swap('score1', 'score2');
     }
 
-    function updateTime() {
-      const now = new Date();
-      const formatter = new Intl.DateTimeFormat('en-US', {
-        timeZone: 'America/New_York',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: true
-      });
-      document.getElementById('currentTime').textContent = formatter.format(now);
-    }
     setInterval(updateTime, 1000);
     updateTime();
-
-    // Ad toggle
-    function toggleAd() {
-      const ad = document.getElementById('adOverlay');
-      ad.style.display = ad.style.display === 'block' ? 'none' : 'block';
-    }
-
-    // Hide controls on LED
-    const isLED = window.location.search.includes('led=true');
-    if (isLED) {
-      document.querySelectorAll('.hidden-on-led').forEach(el => el.style.display = 'none');
-    }
   </script>
 </body>
 </html>
