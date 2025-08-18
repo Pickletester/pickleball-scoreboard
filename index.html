@@ -22,12 +22,8 @@
       font-weight: bold;
       color: white;
     }
-    .player {
-      font-size: 16px;
-    }
-    .score {
-      font-size: 64px;
-    }
+    .player { font-size: 16px; }
+    .score { font-size: 64px; }
 
     #eventName { top: 20px; right: 25px; font-size: 15px; }
     #gameLabel { top: 100px; right: 55px; font-size: 12px; opacity: 0.8; }
@@ -56,15 +52,8 @@
       text-align: center;
     }
 
-    .input-small {
-      font-size: 14px;
-      width: 100px;
-    }
-
-    .input-score {
-      font-size: 64px;
-      width: 70px;
-    }
+    .input-small { font-size: 14px; width: 100px; }
+    .input-score { font-size: 64px; width: 70px; }
 
     .control {
       display: flex;
@@ -75,7 +64,8 @@
     }
 
     .control button,
-    .swap-btn {
+    .swap-btn,
+    .clear-btn {
       background: rgba(255, 255, 255, 0.1);
       border: 1px solid #ccc;
       color: white;
@@ -98,17 +88,20 @@
       border-radius: 4px;
     }
 
+    .clear-btn {
+      position: absolute;
+      bottom: 0px;
+      left: 10px;
+      padding: 1px 12px;
+      font-size: 12px;
+      border-radius: 4px;
+    }
+
     .hidden-on-led {
       display: block;
     }
-
-    /* Optional: hide controls on LED screen (uncomment this for the LED version) */
-    /*
-    .hidden-on-led {
-      display: none !important;
-    }
-    */
   </style>
+
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
@@ -146,10 +139,10 @@
     </div>
 
     <button class="swap-btn hidden-on-led" onclick="swapSides()">Swap Sides</button>
+    <button class="clear-btn hidden-on-led" onclick="clearAll()">Clear All</button>
   </div>
 
   <script>
-    // Firebase configuration
     const firebaseConfig = {
       apiKey: "AIzaSyD_unRHQhjXS0JZ1ON-4u0KfNX4lIqNlbU",
       authDomain: "pickleballscoreboard-a963e.firebaseapp.com",
@@ -161,11 +154,9 @@
       measurementId: "G-N1Y4292E8V"
     };
 
-    // Initialize Firebase
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // Fields to sync
     const fields = {
       eventNameInput: 'eventName',
       gameScoreInput: 'gameScore',
@@ -177,14 +168,11 @@
       score2: 'score2'
     };
 
-    // Set up syncing for each field
     Object.entries(fields).forEach(([inputId, dbKey]) => {
       const input = document.getElementById(inputId);
-      // Update Firebase on input change
       input.addEventListener('input', () => {
         db.ref('scoreboard/' + dbKey).set(input.value);
       });
-      // Listen for Firebase changes and update input
       db.ref('scoreboard/' + dbKey).on('value', snapshot => {
         const val = snapshot.val();
         if (val !== null && input.value !== val) {
@@ -211,14 +199,13 @@
       let current = parseInt(input.value) || 0;
       current = Math.max(0, current + delta);
       input.value = current;
-      // Sync to Firebase
       db.ref('scoreboard/' + id).set(input.value);
     }
 
     function swapSides() {
-      let tempP1 = document.getElementById('p1').value;
-      let tempP2 = document.getElementById('p2').value;
-      let tempScore1 = document.getElementById('score1').value;
+      const tempP1 = document.getElementById('p1').value;
+      const tempP2 = document.getElementById('p2').value;
+      const tempScore1 = document.getElementById('score1').value;
 
       document.getElementById('p1').value = document.getElementById('p4').value;
       document.getElementById('p2').value = document.getElementById('p3').value;
@@ -228,11 +215,26 @@
       document.getElementById('p3').value = tempP2;
       document.getElementById('score2').value = tempScore1;
 
-      // Sync swapped values to Firebase
-      Object.entries(fields).forEach(([inputId, dbKey]) => {
-        if (['p1', 'p2', 'p3', 'p4', 'score1', 'score2'].includes(inputId)) {
-          db.ref('scoreboard/' + dbKey).set(document.getElementById(inputId).value);
-        }
+      ['p1','p2','p3','p4','score1','score2'].forEach(id => {
+        db.ref('scoreboard/' + id).set(document.getElementById(id).value);
+      });
+    }
+
+    function clearAll() {
+      const defaults = {
+        eventNameInput: "EVENT NAME",
+        gameScoreInput: "0-0, 0-0",
+        p1: "PLAYER 1",
+        p2: "PLAYER 2",
+        p3: "PLAYER 3",
+        p4: "PLAYER 4",
+        score1: "0",
+        score2: "0"
+      };
+
+      Object.entries(defaults).forEach(([id, value]) => {
+        document.getElementById(id).value = value;
+        db.ref('scoreboard/' + fields[id]).set(value);
       });
     }
 
@@ -241,95 +243,3 @@
   </script>
 </body>
 </html>
-<!-- Firebase Modular SDK -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-  import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyD_unRHQhjXS0JZ1ON-4u0KfNX4lIqNlbU",
-    authDomain: "pickleballscoreboard-a963e.firebaseapp.com",
-    databaseURL: "https://pickleballscoreboard-a963e-default-rtdb.firebaseio.com",
-    projectId: "pickleballscoreboard-a963e",
-    storageBucket: "pickleballscoreboard-a963e.appspot.com",
-    messagingSenderId: "858315041471",
-    appId: "1:858315041471:web:59bf87df2f4dae68de740a",
-    measurementId: "G-N1Y4292E8V"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const db = getDatabase(app);
-
-  const fields = {
-    eventNameInput: 'eventName',
-    gameScoreInput: 'gameScore',
-    p1: 'p1',
-    p2: 'p2',
-    p3: 'p3',
-    p4: 'p4',
-    score1: 'score1',
-    score2: 'score2'
-  };
-
-  Object.entries(fields).forEach(([inputId, dbKey]) => {
-    const input = document.getElementById(inputId);
-    if (!input) return;
-
-    // Write to Firebase on input
-    input.addEventListener('input', () => {
-      set(ref(db, 'scoreboard/' + dbKey), input.value);
-    });
-
-    // Listen for Firebase updates
-    onValue(ref(db, 'scoreboard/' + dbKey), snapshot => {
-      const val = snapshot.val();
-      if (val !== null && input.value !== val) {
-        input.value = val;
-      }
-    });
-  });
-
-  // Score adjustment logic
-  window.adjustScore = function(id, delta) {
-    const input = document.getElementById(id);
-    let current = parseInt(input.value) || 0;
-    current = Math.max(0, current + delta);
-    input.value = current;
-    set(ref(db, 'scoreboard/' + id), input.value);
-  };
-
-  window.swapSides = function() {
-    const swapMap = {
-      p1: 'p4',
-      p2: 'p3',
-      p3: 'p2',
-      p4: 'p1',
-      score1: 'score2',
-      score2: 'score1'
-    };
-
-    Object.entries(swapMap).forEach(([a, b]) => {
-      const valA = document.getElementById(a).value;
-      const valB = document.getElementById(b).value;
-      document.getElementById(a).value = valB;
-      document.getElementById(b).value = valA;
-      set(ref(db, 'scoreboard/' + a), valB);
-      set(ref(db, 'scoreboard/' + b), valA);
-    });
-  };
-
-  function updateTime() {
-    const now = new Date();
-    const formatter = new Intl.DateTimeFormat('en-US', {
-      timeZone: 'America/New_York',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: true
-    });
-    document.getElementById('currentTime').textContent = formatter.format(now);
-  }
-
-  setInterval(updateTime, 1000);
-  updateTime();
-</script>
