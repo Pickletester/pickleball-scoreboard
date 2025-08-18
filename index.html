@@ -6,39 +6,9 @@
   <style>
     body {
       margin: 0;
+      background-color: black;
       overflow: hidden;
-      background: black;
-    }
-
-    #scoreboard {
-      position: fixed;
-      bottom: 0;
-      width: 100%;
-      background: rgba(0, 0, 0, 0.6);
-      color: white;
       font-family: Arial, sans-serif;
-      font-size: 2rem;
-      text-align: center;
-      display: flex;
-      justify-content: space-around;
-      padding: 10px 0;
-    }
-
-    .team {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-
-    button {
-      font-size: 1rem;
-      margin: 5px;
-      padding: 4px 10px;
-      background-color: white;
-      color: black;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
     }
 
     #background {
@@ -50,22 +20,79 @@
       object-fit: cover;
       z-index: -1;
     }
+
+    #scoreboard {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      background-color: rgba(0, 0, 0, 0.6);
+      color: white;
+      padding: 15px 0;
+    }
+
+    .team {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 40%;
+    }
+
+    .team input {
+      background: transparent;
+      border: none;
+      color: white;
+      font-size: 1.8rem;
+      font-weight: bold;
+      text-align: center;
+      margin-bottom: 5px;
+      width: 100%;
+    }
+
+    .team input:focus {
+      outline: none;
+      border-bottom: 2px solid white;
+    }
+
+    .score {
+      font-size: 2.5rem;
+      font-weight: bold;
+    }
+
+    .buttons {
+      margin-top: 5px;
+    }
+
+    button {
+      font-size: 1.2rem;
+      margin: 0 5px;
+      padding: 4px 10px;
+      background-color: white;
+      color: black;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
-  <img id="background" src="backgroundsb.png" alt="Background">
+  <img id="background" src="backgroundsb.png" alt="Background" />
 
   <div id="scoreboard">
     <div class="team">
-      <div>Team A: <span id="scoreA">0</span></div>
-      <div>
+      <input id="teamAName" value="Team A" />
+      <div class="score" id="scoreA">0</div>
+      <div class="buttons">
         <button onclick="changeScore('A', 1)">+</button>
         <button onclick="changeScore('A', -1)">−</button>
       </div>
     </div>
     <div class="team">
-      <div>Team B: <span id="scoreB">0</span></div>
-      <div>
+      <input id="teamBName" value="Team B" />
+      <div class="score" id="scoreB">0</div>
+      <div class="buttons">
         <button onclick="changeScore('B', 1)">+</button>
         <button onclick="changeScore('B', -1)">−</button>
       </div>
@@ -93,18 +120,38 @@
 
     const scoreARef = ref(db, 'scoreboard/scoreA');
     const scoreBRef = ref(db, 'scoreboard/scoreB');
+    const nameARef = ref(db, 'scoreboard/nameA');
+    const nameBRef = ref(db, 'scoreboard/nameB');
 
     const scoreASpan = document.getElementById('scoreA');
     const scoreBSpan = document.getElementById('scoreB');
+    const nameAInput = document.getElementById('teamAName');
+    const nameBInput = document.getElementById('teamBName');
 
     function updateDisplay(ref, el) {
       onValue(ref, snapshot => {
-        el.textContent = snapshot.val() ?? 0;
+        const value = snapshot.val();
+        if (value !== null) el.textContent = value;
+      });
+    }
+
+    function updateName(ref, el) {
+      onValue(ref, snapshot => {
+        const value = snapshot.val();
+        if (value !== null && el !== document.activeElement) {
+          el.value = value;
+        }
+      });
+
+      el.addEventListener('input', () => {
+        set(ref, el.value);
       });
     }
 
     updateDisplay(scoreARef, scoreASpan);
     updateDisplay(scoreBRef, scoreBSpan);
+    updateName(nameARef, nameAInput);
+    updateName(nameBRef, nameBInput);
 
     function changeScore(team, delta) {
       const scoreRef = team === 'A' ? scoreARef : scoreBRef;
