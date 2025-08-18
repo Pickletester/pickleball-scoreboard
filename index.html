@@ -80,8 +80,7 @@
     }
 
     .control button,
-    .swap-btn,
-    .toggle-ad-btn {
+    .swap-btn {
       background: rgba(255, 255, 255, 0.1);
       border: 1px solid #ccc;
       color: white;
@@ -104,30 +103,32 @@
       border-radius: 4px;
     }
 
-    .toggle-ad-btn {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      z-index: 5;
-      padding: 4px 10px;
-      font-size: 12px;
-      border-radius: 4px;
-    }
-
-    .ad-overlay {
+    #adOverlay {
       position: absolute;
       top: 0;
       left: 0;
       width: 845px;
       height: 314px;
-      z-index: 4;
+      background-color: black;
+      background-image: url('test.png');
+      background-size: cover;
+      background-position: center;
       display: none;
+      z-index: 99;
     }
 
-    .ad-overlay img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
+    #toggleAdBtn {
+      position: absolute;
+      top: 5px;
+      left: 5px;
+      z-index: 100;
+      padding: 4px 10px;
+      background: rgba(255, 255, 255, 0.2);
+      border: 1px solid #aaa;
+      color: white;
+      font-weight: bold;
+      font-size: 12px;
+      cursor: pointer;
     }
   </style>
 
@@ -135,10 +136,13 @@
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
 </head>
-<body>
-  <button class="toggle-ad-btn" onclick="toggleAd()">Toggle Ad</button>
 
+<body>
   <div class="container">
+    <button id="toggleAdBtn" onclick="toggleAd()">Toggle Ad</button>
+
+    <div id="adOverlay"></div>
+
     <div id="eventName" class="text">
       <input id="eventNameInput" class="input-small" value="EVENT NAME" />
     </div>
@@ -170,12 +174,10 @@
     </div>
 
     <button class="swap-btn" onclick="swapSides()">Swap Sides</button>
-    <div class="ad-overlay" id="adOverlay">
-      <img src="test.png" alt="Ad Image" />
-    </div>
   </div>
 
   <script>
+    // Firebase configuration
     const firebaseConfig = {
       apiKey: "AIzaSyD_unRHQhjXS0JZ1ON-4u0KfNX4lIqNlbU",
       authDomain: "pickleballscoreboard-a963e.firebaseapp.com",
@@ -183,8 +185,7 @@
       projectId: "pickleballscoreboard-a963e",
       storageBucket: "pickleballscoreboard-a963e.appspot.com",
       messagingSenderId: "858315041471",
-      appId: "1:858315041471:web:59bf87df2f4dae68de740a",
-      measurementId: "G-N1Y4292E8V"
+      appId: "1:858315041471:web:59bf87df2f4dae68de740a"
     };
 
     firebase.initializeApp(firebaseConfig);
@@ -214,18 +215,6 @@
       });
     });
 
-    function updateTime() {
-      const now = new Date();
-      const formatter = new Intl.DateTimeFormat('en-US', {
-        timeZone: 'America/New_York',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: true
-      });
-      document.getElementById('currentTime').textContent = formatter.format(now);
-    }
-
     function adjustScore(id, delta) {
       const input = document.getElementById(id);
       let current = parseInt(input.value) || 0;
@@ -254,9 +243,21 @@
       });
     }
 
+    function updateTime() {
+      const now = new Date();
+      const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'America/New_York',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+      });
+      document.getElementById('currentTime').textContent = formatter.format(now);
+    }
+
     function toggleAd() {
-      const ad = document.getElementById('adOverlay');
-      ad.style.display = (ad.style.display === 'none' || ad.style.display === '') ? 'block' : 'none';
+      const overlay = document.getElementById('adOverlay');
+      overlay.style.display = (overlay.style.display === 'none' || overlay.style.display === '') ? 'block' : 'none';
     }
 
     setInterval(updateTime, 1000);
