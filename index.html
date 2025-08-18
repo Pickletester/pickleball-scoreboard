@@ -102,22 +102,25 @@
       display: block;
     }
 
-    /* Optional: hide controls on LED screen (you can uncomment this on LED) */
+    /* Optional: hide controls on LED screen (uncomment this for the LED version) */
     /*
     .hidden-on-led {
       display: none !important;
     }
     */
   </style>
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
 </head>
 <body>
   <div class="container">
     <div id="eventName" class="text">
-      <input class="input-small" value="EVENT NAME" />
+      <input id="eventNameInput" class="input-small" value="EVENT NAME" />
     </div>
     <div id="gameLabel" class="text">GAMES</div>
     <div id="gameScore" class="text">
-      <input class="input-small" value="0-0, 0-0" />
+      <input id="gameScoreInput" class="input-small" value="0-0, 0-0" />
     </div>
     <div id="currentTime" class="text">TIME</div>
 
@@ -146,6 +149,50 @@
   </div>
 
   <script>
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyD_unRHQhjXS0JZ1ON-4u0KfNX4lIqNlbU",
+      authDomain: "pickleballscoreboard-a963e.firebaseapp.com",
+      databaseURL: "https://pickleballscoreboard-a963e-default-rtdb.firebaseio.com",
+      projectId: "pickleballscoreboard-a963e",
+      storageBucket: "pickleballscoreboard-a963e.appspot.com",
+      messagingSenderId: "858315041471",
+      appId: "1:858315041471:web:59bf87df2f4dae68de740a",
+      measurementId: "G-N1Y4292E8V"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // Fields to sync
+    const fields = {
+      eventNameInput: 'eventName',
+      gameScoreInput: 'gameScore',
+      p1: 'p1',
+      p2: 'p2',
+      p3: 'p3',
+      p4: 'p4',
+      score1: 'score1',
+      score2: 'score2'
+    };
+
+    // Set up syncing for each field
+    Object.entries(fields).forEach(([inputId, dbKey]) => {
+      const input = document.getElementById(inputId);
+      // Update Firebase on input change
+      input.addEventListener('input', () => {
+        db.ref('scoreboard/' + dbKey).set(input.value);
+      });
+      // Listen for Firebase changes and update input
+      db.ref('scoreboard/' + dbKey).on('value', snapshot => {
+        const val = snapshot.val();
+        if (val !== null && input.value !== val) {
+          input.value = val;
+        }
+      });
+    });
+
     function updateTime() {
       const now = new Date();
       const options = {
@@ -164,6 +211,8 @@
       let current = parseInt(input.value) || 0;
       current = Math.max(0, current + delta);
       input.value = current;
+      // Sync to Firebase
+      db.ref('scoreboard/' + id).set(input.value);
     }
 
     function swapSides() {
@@ -178,6 +227,13 @@
       document.getElementById('p4').value = tempP1;
       document.getElementById('p3').value = tempP2;
       document.getElementById('score2').value = tempScore1;
+
+      // Sync swapped values to Firebase
+      Object.entries(fields).forEach(([inputId, dbKey]) => {
+        if (['p1', 'p2', 'p3', 'p4', 'score1', 'score2'].includes(inputId)) {
+          db.ref('scoreboard/' + dbKey).set(document.getElementById(inputId).value);
+        }
+      });
     }
 
     setInterval(updateTime, 1000);
