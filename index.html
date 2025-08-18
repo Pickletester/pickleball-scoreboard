@@ -1,62 +1,82 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Pickleball Scoreboard</title>
+  <meta charset="UTF-8">
+  <title>Scoreboard</title>
   <style>
     body {
       margin: 0;
-      padding: 0;
-      background: url('backgroundSB.png') no-repeat center center fixed;
-      background-size: cover;
-      font-family: sans-serif;
-      color: white;
-      text-align: center;
+      overflow: hidden;
+      background: black;
     }
-    .scoreboard {
-      position: absolute;
+
+    #scoreboard {
+      position: fixed;
       bottom: 0;
       width: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      color: white;
+      font-family: Arial, sans-serif;
+      font-size: 2rem;
+      text-align: center;
       display: flex;
       justify-content: space-around;
-      align-items: center;
-      padding: 20px;
-      background: rgba(0,0,0,0.6);
-      font-size: 3rem;
+      padding: 10px 0;
     }
+
     .team {
-      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
-    .controls button {
-      font-size: 1.5rem;
+
+    button {
+      font-size: 1rem;
       margin: 5px;
+      padding: 4px 10px;
+      background-color: white;
+      color: black;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    #background {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 100%;
+      object-fit: cover;
+      z-index: -1;
     }
   </style>
-  <!-- Firebase SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/9.24.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.24.0/firebase-database-compat.js"></script>
 </head>
 <body>
-  <div class="scoreboard">
+  <img id="background" src="backgroundsb.png" alt="Background">
+
+  <div id="scoreboard">
     <div class="team">
       <div>Team A: <span id="scoreA">0</span></div>
-      <div class="controls">
-        <button onclick="updateScore('A', 1)">+</button>
-        <button onclick="updateScore('A', -1)">-</button>
+      <div>
+        <button onclick="changeScore('A', 1)">+</button>
+        <button onclick="changeScore('A', -1)">−</button>
       </div>
     </div>
     <div class="team">
       <div>Team B: <span id="scoreB">0</span></div>
-      <div class="controls">
-        <button onclick="updateScore('B', 1)">+</button>
-        <button onclick="updateScore('B', -1)">-</button>
+      <div>
+        <button onclick="changeScore('B', 1)">+</button>
+        <button onclick="changeScore('B', -1)">−</button>
       </div>
     </div>
   </div>
 
-  <script>
-    // Firebase configuration
+  <!-- Firebase -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
     const firebaseConfig = {
       apiKey: "AIzaSyD_unRHQhjXS0JZ1ON-4u0KfNX4lIqNlbU",
       authDomain: "pickleballscoreboard-a963e.firebaseapp.com",
@@ -68,31 +88,32 @@
       measurementId: "G-N1Y4292E8V"
     };
 
-    // Initialize Firebase
-    const app = firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
 
-    // Score elements
-    const scoreA = document.getElementById('scoreA');
-    const scoreB = document.getElementById('scoreB');
+    const scoreARef = ref(db, 'scoreboard/scoreA');
+    const scoreBRef = ref(db, 'scoreboard/scoreB');
 
-    // Update score function
-    function updateScore(team, change) {
-      const ref = db.ref('scores/' + team);
-      ref.once('value').then(snapshot => {
-        let current = snapshot.val() || 0;
-        ref.set(Math.max(0, current + change));
+    const scoreASpan = document.getElementById('scoreA');
+    const scoreBSpan = document.getElementById('scoreB');
+
+    function updateDisplay(ref, el) {
+      onValue(ref, snapshot => {
+        el.textContent = snapshot.val() ?? 0;
       });
     }
 
-    // Listen for changes
-    db.ref('scores/A').on('value', snapshot => {
-      scoreA.textContent = snapshot.val() ?? 0;
-    });
+    updateDisplay(scoreARef, scoreASpan);
+    updateDisplay(scoreBRef, scoreBSpan);
 
-    db.ref('scores/B').on('value', snapshot => {
-      scoreB.textContent = snapshot.val() ?? 0;
-    });
+    function changeScore(team, delta) {
+      const scoreRef = team === 'A' ? scoreARef : scoreBRef;
+      const span = team === 'A' ? scoreASpan : scoreBSpan;
+      const newScore = Math.max(0, parseInt(span.textContent || '0') + delta);
+      set(scoreRef, newScore);
+    }
+
+    window.changeScore = changeScore;
   </script>
 </body>
 </html>
