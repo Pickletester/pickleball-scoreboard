@@ -98,14 +98,17 @@
       border-radius: 4px;
     }
 
-    /* Hide controls/buttons on LED screen */
-    @media screen and (min-width: 845px) and (max-height: 314px) {
-      .hidden-on-led {
-        display: none !important;
-      }
+    .hidden-on-led {
+      display: block;
     }
-  </style>
 
+    /* Optional: hide controls on LED screen (uncomment this for the LED version) */
+    /*
+    .hidden-on-led {
+      display: none !important;
+    }
+    */
+  </style>
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
@@ -146,6 +149,7 @@
   </div>
 
   <script>
+    // Firebase configuration
     const firebaseConfig = {
       apiKey: "AIzaSyD_unRHQhjXS0JZ1ON-4u0KfNX4lIqNlbU",
       authDomain: "pickleballscoreboard-a963e.firebaseapp.com",
@@ -157,9 +161,11 @@
       measurementId: "G-N1Y4292E8V"
     };
 
+    // Initialize Firebase
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
+    // Fields to sync
     const fields = {
       eventNameInput: 'eventName',
       gameScoreInput: 'gameScore',
@@ -171,11 +177,14 @@
       score2: 'score2'
     };
 
+    // Set up syncing for each field
     Object.entries(fields).forEach(([inputId, dbKey]) => {
       const input = document.getElementById(inputId);
+      // Update Firebase on input change
       input.addEventListener('input', () => {
         db.ref('scoreboard/' + dbKey).set(input.value);
       });
+      // Listen for Firebase changes and update input
       db.ref('scoreboard/' + dbKey).on('value', snapshot => {
         const val = snapshot.val();
         if (val !== null && input.value !== val) {
@@ -193,7 +202,8 @@
         second: '2-digit',
         hour12: true
       };
-      document.getElementById('currentTime').textContent = new Intl.DateTimeFormat('en-US', options).format(now);
+      const formatter = new Intl.DateTimeFormat('en-US', options);
+      document.getElementById('currentTime').textContent = formatter.format(now);
     }
 
     function adjustScore(id, delta) {
@@ -201,20 +211,29 @@
       let current = parseInt(input.value) || 0;
       current = Math.max(0, current + delta);
       input.value = current;
+      // Sync to Firebase
       db.ref('scoreboard/' + id).set(input.value);
     }
 
     function swapSides() {
-      const swap = (a, b) => {
-        let temp = document.getElementById(a).value;
-        document.getElementById(a).value = document.getElementById(b).value;
-        document.getElementById(b).value = temp;
-        db.ref('scoreboard/' + a).set(document.getElementById(a).value);
-        db.ref('scoreboard/' + b).set(document.getElementById(b).value);
-      };
-      swap('p1', 'p4');
-      swap('p2', 'p3');
-      swap('score1', 'score2');
+      let tempP1 = document.getElementById('p1').value;
+      let tempP2 = document.getElementById('p2').value;
+      let tempScore1 = document.getElementById('score1').value;
+
+      document.getElementById('p1').value = document.getElementById('p4').value;
+      document.getElementById('p2').value = document.getElementById('p3').value;
+      document.getElementById('score1').value = document.getElementById('score2').value;
+
+      document.getElementById('p4').value = tempP1;
+      document.getElementById('p3').value = tempP2;
+      document.getElementById('score2').value = tempScore1;
+
+      // Sync swapped values to Firebase
+      Object.entries(fields).forEach(([inputId, dbKey]) => {
+        if (['p1', 'p2', 'p3', 'p4', 'score1', 'score2'].includes(inputId)) {
+          db.ref('scoreboard/' + dbKey).set(document.getElementById(inputId).value);
+        }
+      });
     }
 
     setInterval(updateTime, 1000);
@@ -222,3 +241,95 @@
   </script>
 </body>
 </html>
+<!-- Firebase Modular SDK -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+  import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyD_unRHQhjXS0JZ1ON-4u0KfNX4lIqNlbU",
+    authDomain: "pickleballscoreboard-a963e.firebaseapp.com",
+    databaseURL: "https://pickleballscoreboard-a963e-default-rtdb.firebaseio.com",
+    projectId: "pickleballscoreboard-a963e",
+    storageBucket: "pickleballscoreboard-a963e.appspot.com",
+    messagingSenderId: "858315041471",
+    appId: "1:858315041471:web:59bf87df2f4dae68de740a",
+    measurementId: "G-N1Y4292E8V"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  const fields = {
+    eventNameInput: 'eventName',
+    gameScoreInput: 'gameScore',
+    p1: 'p1',
+    p2: 'p2',
+    p3: 'p3',
+    p4: 'p4',
+    score1: 'score1',
+    score2: 'score2'
+  };
+
+  Object.entries(fields).forEach(([inputId, dbKey]) => {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+
+    // Write to Firebase on input
+    input.addEventListener('input', () => {
+      set(ref(db, 'scoreboard/' + dbKey), input.value);
+    });
+
+    // Listen for Firebase updates
+    onValue(ref(db, 'scoreboard/' + dbKey), snapshot => {
+      const val = snapshot.val();
+      if (val !== null && input.value !== val) {
+        input.value = val;
+      }
+    });
+  });
+
+  // Score adjustment logic
+  window.adjustScore = function(id, delta) {
+    const input = document.getElementById(id);
+    let current = parseInt(input.value) || 0;
+    current = Math.max(0, current + delta);
+    input.value = current;
+    set(ref(db, 'scoreboard/' + id), input.value);
+  };
+
+  window.swapSides = function() {
+    const swapMap = {
+      p1: 'p4',
+      p2: 'p3',
+      p3: 'p2',
+      p4: 'p1',
+      score1: 'score2',
+      score2: 'score1'
+    };
+
+    Object.entries(swapMap).forEach(([a, b]) => {
+      const valA = document.getElementById(a).value;
+      const valB = document.getElementById(b).value;
+      document.getElementById(a).value = valB;
+      document.getElementById(b).value = valA;
+      set(ref(db, 'scoreboard/' + a), valB);
+      set(ref(db, 'scoreboard/' + b), valA);
+    });
+  };
+
+  function updateTime() {
+    const now = new Date();
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/New_York',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true
+    });
+    document.getElementById('currentTime').textContent = formatter.format(now);
+  }
+
+  setInterval(updateTime, 1000);
+  updateTime();
+</script>
