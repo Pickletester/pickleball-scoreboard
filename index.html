@@ -7,7 +7,9 @@
     body {
       margin: 0;
       background-color: black;
+      overflow: hidden;
     }
+
     .container {
       position: relative;
       width: 845px;
@@ -17,13 +19,20 @@
       font-family: Arial, sans-serif;
       color: white;
     }
+
     .text {
       position: absolute;
       font-weight: bold;
       color: white;
     }
-    .player { font-size: 16px; }
-    .score { font-size: 64px; }
+
+    .player {
+      font-size: 16px;
+    }
+
+    .score {
+      font-size: 64px;
+    }
 
     #eventName { top: 20px; right: 25px; font-size: 15px; }
     #gameLabel { top: 100px; right: 55px; font-size: 12px; opacity: 0.8; }
@@ -52,8 +61,15 @@
       text-align: center;
     }
 
-    .input-small { font-size: 14px; width: 100px; }
-    .input-score { font-size: 64px; width: 70px; }
+    .input-small {
+      font-size: 14px;
+      width: 100px;
+    }
+
+    .input-score {
+      font-size: 64px;
+      width: 70px;
+    }
 
     .control {
       display: flex;
@@ -63,7 +79,9 @@
       gap: 2px;
     }
 
-    .control button, .swap-btn, .toggle-ad {
+    .control button,
+    .swap-btn,
+    .toggle-ad-btn {
       background: rgba(255, 255, 255, 0.1);
       border: 1px solid #ccc;
       color: white;
@@ -71,28 +89,45 @@
       cursor: pointer;
     }
 
-    .control button { width: 25px; height: 25px; }
+    .control button {
+      width: 25px;
+      height: 25px;
+    }
 
-    .swap-btn, .toggle-ad {
+    .swap-btn {
       position: absolute;
       bottom: 0px;
+      left: 38%;
       transform: translateX(-50%);
       padding: 1px 12px;
       font-size: 12px;
       border-radius: 4px;
     }
 
-    .swap-btn { left: 38%; }
-    .toggle-ad { left: 62%; }
+    .toggle-ad-btn {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 5;
+      padding: 4px 10px;
+      font-size: 12px;
+      border-radius: 4px;
+    }
 
-    #adVideo {
-      display: none;
+    .ad-overlay {
       position: absolute;
       top: 0;
       left: 0;
       width: 845px;
       height: 314px;
-      z-index: 100;
+      z-index: 4;
+      display: none;
+    }
+
+    .ad-overlay img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
     }
   </style>
 
@@ -101,9 +136,9 @@
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
 </head>
 <body>
-  <video id="adVideo" src="test.png" muted loop></video>
+  <button class="toggle-ad-btn" onclick="toggleAd()">Toggle Ad</button>
 
-  <div class="container" id="scoreboard">
+  <div class="container">
     <div id="eventName" class="text">
       <input id="eventNameInput" class="input-small" value="EVENT NAME" />
     </div>
@@ -135,7 +170,9 @@
     </div>
 
     <button class="swap-btn" onclick="swapSides()">Swap Sides</button>
-    <button class="toggle-ad" onclick="toggleAd()">Toggle Ad</button>
+    <div class="ad-overlay" id="adOverlay">
+      <img src="test.png" alt="Ad Image" />
+    </div>
   </div>
 
   <script>
@@ -177,12 +214,24 @@
       });
     });
 
+    function updateTime() {
+      const now = new Date();
+      const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'America/New_York',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+      });
+      document.getElementById('currentTime').textContent = formatter.format(now);
+    }
+
     function adjustScore(id, delta) {
       const input = document.getElementById(id);
       let current = parseInt(input.value) || 0;
       current = Math.max(0, current + delta);
       input.value = current;
-      db.ref('scoreboard/' + id).set(current);
+      db.ref('scoreboard/' + id).set(input.value);
     }
 
     function swapSides() {
@@ -198,38 +247,20 @@
       document.getElementById('p3').value = tempP2;
       document.getElementById('score2').value = tempScore1;
 
-      ['p1', 'p2', 'p3', 'p4', 'score1', 'score2'].forEach(id => {
-        db.ref('scoreboard/' + id).set(document.getElementById(id).value);
+      Object.entries(fields).forEach(([inputId, dbKey]) => {
+        if (['p1', 'p2', 'p3', 'p4', 'score1', 'score2'].includes(inputId)) {
+          db.ref('scoreboard/' + dbKey).set(document.getElementById(inputId).value);
+        }
       });
     }
-
-    function updateTime() {
-      const now = new Date();
-      const formatter = new Intl.DateTimeFormat('en-US', {
-        timeZone: 'America/New_York',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: true
-      });
-      document.getElementById('currentTime').textContent = formatter.format(now);
-    }
-    setInterval(updateTime, 1000);
-    updateTime();
 
     function toggleAd() {
-      const ad = document.getElementById('adVideo');
-      const board = document.getElementById('scoreboard');
-      if (ad.style.display === 'none') {
-        ad.style.display = 'block';
-        ad.play();
-        board.style.display = 'none';
-      } else {
-        ad.style.display = 'none';
-        ad.pause();
-        board.style.display = 'block';
-      }
+      const ad = document.getElementById('adOverlay');
+      ad.style.display = (ad.style.display === 'none' || ad.style.display === '') ? 'block' : 'none';
     }
+
+    setInterval(updateTime, 1000);
+    updateTime();
   </script>
 </body>
 </html>
