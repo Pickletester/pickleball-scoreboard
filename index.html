@@ -1,166 +1,83 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>Scoreboard</title>
-  <style>
-    body {
-      margin: 0;
-      background-color: black;
-      overflow: hidden;
-      font-family: Arial, sans-serif;
-    }
+<!-- Add Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
 
-    #background {
-      position: fixed;
-      top: 0;
-      left: 0;
-      height: 100%;
-      width: 100%;
-      object-fit: cover;
-      z-index: -1;
-    }
+<script>
+  // Your Firebase config
+  const firebaseConfig = {
+    apiKey: "AIzaSyD_unRHQhjXS0JZ1ON-4u0KfNX4lIqNlbU",
+    authDomain: "pickleballscoreboard-a963e.firebaseapp.com",
+    databaseURL: "https://pickleballscoreboard-a963e-default-rtdb.firebaseio.com",
+    projectId: "pickleballscoreboard-a963e",
+    storageBucket: "pickleballscoreboard-a963e.appspot.com",
+    messagingSenderId: "858315041471",
+    appId: "1:858315041471:web:59bf87df2f4dae68de740a"
+  };
 
-    #scoreboard {
-      position: fixed;
-      bottom: 0;
-      width: 100%;
-      display: flex;
-      justify-content: space-around;
-      align-items: center;
-      background-color: rgba(0, 0, 0, 0.6);
-      color: white;
-      padding: 15px 0;
-    }
+  // Initialize Firebase
+  const app = firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
 
-    .team {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      width: 40%;
-    }
-
-    .team input {
-      background: transparent;
-      border: none;
-      color: white;
-      font-size: 1.8rem;
-      font-weight: bold;
-      text-align: center;
-      margin-bottom: 5px;
-      width: 100%;
-    }
-
-    .team input:focus {
-      outline: none;
-      border-bottom: 2px solid white;
-    }
-
-    .score {
-      font-size: 2.5rem;
-      font-weight: bold;
-    }
-
-    .buttons {
-      margin-top: 5px;
-    }
-
-    button {
-      font-size: 1.2rem;
-      margin: 0 5px;
-      padding: 4px 10px;
-      background-color: white;
-      color: black;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-  </style>
-</head>
-<body>
-  <img id="background" src="backgroundsb.png" alt="Background" />
-
-  <div id="scoreboard">
-    <div class="team">
-      <input id="teamAName" value="Team A" />
-      <div class="score" id="scoreA">0</div>
-      <div class="buttons">
-        <button onclick="changeScore('A', 1)">+</button>
-        <button onclick="changeScore('A', -1)">−</button>
-      </div>
-    </div>
-    <div class="team">
-      <input id="teamBName" value="Team B" />
-      <div class="score" id="scoreB">0</div>
-      <div class="buttons">
-        <button onclick="changeScore('B', 1)">+</button>
-        <button onclick="changeScore('B', -1)">−</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Firebase -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-    import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyD_unRHQhjXS0JZ1ON-4u0KfNX4lIqNlbU",
-      authDomain: "pickleballscoreboard-a963e.firebaseapp.com",
-      databaseURL: "https://pickleballscoreboard-a963e-default-rtdb.firebaseio.com",
-      projectId: "pickleballscoreboard-a963e",
-      storageBucket: "pickleballscoreboard-a963e.appspot.com",
-      messagingSenderId: "858315041471",
-      appId: "1:858315041471:web:59bf87df2f4dae68de740a",
-      measurementId: "G-N1Y4292E8V"
+  function updateTime() {
+    const now = new Date();
+    const options = {
+      timeZone: 'America/New_York',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true
     };
+    const formatter = new Intl.DateTimeFormat('en-US', options);
+    document.getElementById('currentTime').textContent = formatter.format(now);
+  }
+  setInterval(updateTime, 1000);
+  updateTime();
 
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
+  // IDs to sync
+  const ids = ['p1', 'p2', 'p3', 'p4', 'score1', 'score2', 'gameScore', 'eventName'];
 
-    const scoreARef = ref(db, 'scoreboard/scoreA');
-    const scoreBRef = ref(db, 'scoreboard/scoreB');
-    const nameARef = ref(db, 'scoreboard/nameA');
-    const nameBRef = ref(db, 'scoreboard/nameB');
+  // Send updates to Firebase on change
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    el.addEventListener('input', () => {
+      firebase.database().ref('scoreboard/' + id).set(el.value);
+    });
+  });
 
-    const scoreASpan = document.getElementById('scoreA');
-    const scoreBSpan = document.getElementById('scoreB');
-    const nameAInput = document.getElementById('teamAName');
-    const nameBInput = document.getElementById('teamBName');
+  // Listen for changes from Firebase
+  ids.forEach(id => {
+    firebase.database().ref('scoreboard/' + id).on('value', snapshot => {
+      const newVal = snapshot.val();
+      if (newVal !== null && document.getElementById(id).value !== newVal) {
+        document.getElementById(id).value = newVal;
+      }
+    });
+  });
 
-    function updateDisplay(ref, el) {
-      onValue(ref, snapshot => {
-        const value = snapshot.val();
-        if (value !== null) el.textContent = value;
-      });
-    }
+  function adjustScore(id, delta) {
+    const input = document.getElementById(id);
+    let current = parseInt(input.value) || 0;
+    current = Math.max(0, current + delta);
+    input.value = current;
+    firebase.database().ref('scoreboard/' + id).set(current);
+  }
 
-    function updateName(ref, el) {
-      onValue(ref, snapshot => {
-        const value = snapshot.val();
-        if (value !== null && el !== document.activeElement) {
-          el.value = value;
-        }
-      });
+  function swapSides() {
+    let tempP1 = document.getElementById('p1').value;
+    let tempP2 = document.getElementById('p2').value;
+    let tempScore1 = document.getElementById('score1').value;
 
-      el.addEventListener('input', () => {
-        set(ref, el.value);
-      });
-    }
+    document.getElementById('p1').value = document.getElementById('p4').value;
+    document.getElementById('p2').value = document.getElementById('p3').value;
+    document.getElementById('score1').value = document.getElementById('score2').value;
 
-    updateDisplay(scoreARef, scoreASpan);
-    updateDisplay(scoreBRef, scoreBSpan);
-    updateName(nameARef, nameAInput);
-    updateName(nameBRef, nameBInput);
+    document.getElementById('p4').value = tempP1;
+    document.getElementById('p3').value = tempP2;
+    document.getElementById('score2').value = tempScore1;
 
-    function changeScore(team, delta) {
-      const scoreRef = team === 'A' ? scoreARef : scoreBRef;
-      const span = team === 'A' ? scoreASpan : scoreBSpan;
-      const newScore = Math.max(0, parseInt(span.textContent || '0') + delta);
-      set(scoreRef, newScore);
-    }
-
-    window.changeScore = changeScore;
-  </script>
-</body>
-</html>
+    // Update Firebase after swap
+    ids.forEach(id => {
+      firebase.database().ref('scoreboard/' + id).set(document.getElementById(id).value);
+    });
+  }
+</script>
