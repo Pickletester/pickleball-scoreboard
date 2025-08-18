@@ -241,3 +241,95 @@
   </script>
 </body>
 </html>
+<!-- Firebase Modular SDK -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+  import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyD_unRHQhjXS0JZ1ON-4u0KfNX4lIqNlbU",
+    authDomain: "pickleballscoreboard-a963e.firebaseapp.com",
+    databaseURL: "https://pickleballscoreboard-a963e-default-rtdb.firebaseio.com",
+    projectId: "pickleballscoreboard-a963e",
+    storageBucket: "pickleballscoreboard-a963e.appspot.com",
+    messagingSenderId: "858315041471",
+    appId: "1:858315041471:web:59bf87df2f4dae68de740a",
+    measurementId: "G-N1Y4292E8V"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  const fields = {
+    eventNameInput: 'eventName',
+    gameScoreInput: 'gameScore',
+    p1: 'p1',
+    p2: 'p2',
+    p3: 'p3',
+    p4: 'p4',
+    score1: 'score1',
+    score2: 'score2'
+  };
+
+  Object.entries(fields).forEach(([inputId, dbKey]) => {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+
+    // Write to Firebase on input
+    input.addEventListener('input', () => {
+      set(ref(db, 'scoreboard/' + dbKey), input.value);
+    });
+
+    // Listen for Firebase updates
+    onValue(ref(db, 'scoreboard/' + dbKey), snapshot => {
+      const val = snapshot.val();
+      if (val !== null && input.value !== val) {
+        input.value = val;
+      }
+    });
+  });
+
+  // Score adjustment logic
+  window.adjustScore = function(id, delta) {
+    const input = document.getElementById(id);
+    let current = parseInt(input.value) || 0;
+    current = Math.max(0, current + delta);
+    input.value = current;
+    set(ref(db, 'scoreboard/' + id), input.value);
+  };
+
+  window.swapSides = function() {
+    const swapMap = {
+      p1: 'p4',
+      p2: 'p3',
+      p3: 'p2',
+      p4: 'p1',
+      score1: 'score2',
+      score2: 'score1'
+    };
+
+    Object.entries(swapMap).forEach(([a, b]) => {
+      const valA = document.getElementById(a).value;
+      const valB = document.getElementById(b).value;
+      document.getElementById(a).value = valB;
+      document.getElementById(b).value = valA;
+      set(ref(db, 'scoreboard/' + a), valB);
+      set(ref(db, 'scoreboard/' + b), valA);
+    });
+  };
+
+  function updateTime() {
+    const now = new Date();
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/New_York',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true
+    });
+    document.getElementById('currentTime').textContent = formatter.format(now);
+  }
+
+  setInterval(updateTime, 1000);
+  updateTime();
+</script>
