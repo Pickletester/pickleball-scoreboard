@@ -1,165 +1,301 @@
 <!DOCTYPE html>
+
 <html lang="en">
+
 <head>
+
   <meta charset="UTF-8">
-  <title>Pickleball Scoreboard - Multi-Background</title>
+
+  <title>Pickleball Scoreboard - Fixed</title>
+
   <style>
+
     body { margin: 0; background: black; color: white; font-family: sans-serif; overflow: hidden; }
+
     
-    /* Main container matches your image size exactly */
+
+    /* Main container matches your image size exactly to prevent squeezing */
+
     .container { 
+
       position: relative; 
+
       width: 832px; 
+
       height: 384px; 
+
       background-image: url('BackgroundSB.png');
+
       background-size: 100% 100%;
+
       background-repeat: no-repeat;
+
       overflow: hidden;
+
     }
 
-    /* RIGHT SIDE BAR IMAGE */
-    .sidebar-bg {
-      position: absolute;
-      top: 0;
-      right: 0;
-      width: 112px; /* Matches the width of your right-hand black area */
-      height: 384px;
-      background-image: url('Side_Bar_Right.png'); /* Ensure the file extension matches your repo */
-      background-size: 100% 100%;
-      background-repeat: no-repeat;
-      z-index: 0;
-    }
+
 
     /* Common overlay settings */
-    .overlay { position: absolute; font-weight: bold; text-align: center; z-index: 1; }
+
+    .overlay { position: absolute; font-weight: bold; text-align: center; }
+
     input { background: none; border: none; color: white; font-weight: bold; text-align: center; outline: none; width: 100%; }
 
-    /* Player Positioning */
+
+
+    /* Player Positioning based on your BackgroundSB.png boxes */
+
     .player { width: 220px; font-size: 32px; }
+
     #p4-pos { top: 75px; left: 15px; }
+
     #p3-pos { top: 270px; left: 15px; }
+
     #p1-pos { top: 75px; left: 490px; }
+
     #p2-pos { top: 270px; left: 490px; }
 
+
+
     /* Score Positioning */
+
     .score-wrap { width: 110px; }
+
     .input-s { font-size: 130px; }
+
     #s1-pos { top: 100px; left: 245px; }
+
     #s2-pos { top: 100px; left: 355px; }
 
-    /* Controls */
+
+
+    /* Controls (Hidden on LED if desired) */
+
     .controls { display: flex; gap: 5px; justify-content: center; margin-top: -20px; }
+
     .btn { background: #444; color: white; border: 1px solid white; cursor: pointer; padding: 2px 10px; }
 
-    /* Info Panel Positioning (On top of Side_Bar_Right) */
-    .info-wrap { right: 0px; width: 112px; text-align: center; }
+
+
+    /* Info Panel Positioning (Right Side) */
+
+    .info-wrap { left: 720px; width: 112px; text-align: center; }
+
     #event-pos { top: 20px; }
+
     #games-pos { top: 120px; }
+
     #clock-pos { top: 240px; font-size: 18px; color: #00ffcc; width: 112px; }
-    #swap-pos { top: 320px; right: 6px; }
+
+    #swap-pos { top: 320px; left: 725px; }
+
+
 
     .label { font-size: 14px; color: #aaa; text-transform: uppercase; display: block; }
+
     .input-info { font-size: 22px; }
+
   </style>
+
 </head>
+
 <body>
 
+
+
 <div class="container">
-  <div class="sidebar-bg"></div>
 
   <div id="p4-pos" class="overlay player"><input id="p4" value="PLAYER 4"></div>
+
   <div id="p3-pos" class="overlay player"><input id="p3" value="PLAYER 3"></div>
+
   <div id="p1-pos" class="overlay player"><input id="p1" value="PLAYER 1"></div>
+
   <div id="p2-pos" class="overlay player"><input id="p2" value="PLAYER 2"></div>
 
+
+
   <div id="s1-pos" class="overlay score-wrap">
+
     <input id="score1" class="input-s" value="0">
+
     <div class="controls">
+
       <button class="btn" onclick="adjust('score1', 1)">▲</button>
+
       <button class="btn" onclick="adjust('score1', -1)">▼</button>
+
     </div>
+
   </div>
+
   <div id="s2-pos" class="overlay score-wrap">
+
     <input id="score2" class="input-s" value="0">
+
     <div class="controls">
+
       <button class="btn" onclick="adjust('score2', 1)">▲</button>
+
       <button class="btn" onclick="adjust('score2', -1)">▼</button>
+
     </div>
+
   </div>
+
+
 
   <div id="event-pos" class="overlay info-wrap">
+
     <span class="label">EVENT</span>
+
     <input id="event" class="input-info" value="TOURNAMENT">
+
   </div>
+
   <div id="games-pos" class="overlay info-wrap">
+
     <span class="label">GAMES</span>
+
     <input id="games" class="input-info" value="0-0, 0-0">
+
   </div>
-  <div id="clock-pos" class="overlay info-wrap">00:00:00 PM</div>
+
+  <div id="clock-pos" class="overlay">00:00:00 PM</div>
+
   
+
   <button id="swap-pos" class="overlay btn" style="width:100px;" onclick="swap()">SWAP</button>
+
 </div>
 
+
+
 <script type="module">
+
   import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+
   import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
 
+
+
   const firebaseConfig = {
+
     databaseURL: "https://pickleballscoreboard-a963e-default-rtdb.firebaseio.com",
+
     projectId: "pickleballscoreboard-a963e",
+
   };
 
+
+
   const app = initializeApp(firebaseConfig);
+
   const db = getDatabase(app);
+
   const dbRef = ref(db, 'scoreboard');
 
+
+
   onValue(dbRef, (snapshot) => {
+
     const data = snapshot.val();
+
     if (data) {
+
       Object.keys(data).forEach(id => {
+
         const el = document.getElementById(id);
+
         if (el && el.value !== String(data[id])) el.value = data[id];
+
       });
+
     }
+
   });
 
+
+
   function sync() {
+
     const data = {};
+
     document.querySelectorAll('input').forEach(el => data[el.id] = el.value);
+
     set(dbRef, data);
+
   }
+
+
 
   document.querySelectorAll('input').forEach(el => el.oninput = sync);
 
+
+
   window.adjust = (id, amt) => {
+
     const el = document.getElementById(id);
+
     el.value = Math.max(0, parseInt(el.value || 0) + amt);
+
     sync();
+
   };
+
+
 
   window.swap = () => {
+
     const p1 = document.getElementById('p1').value, p2 = document.getElementById('p2').value;
+
     const p3 = document.getElementById('p3').value, p4 = document.getElementById('p4').value;
+
     const s1 = document.getElementById('score1').value, s2 = document.getElementById('score2').value;
+
     document.getElementById('p1').value = p4; document.getElementById('p4').value = p1;
+
     document.getElementById('p2').value = p3; document.getElementById('p3').value = p2;
+
     document.getElementById('score1').value = s2; document.getElementById('score2').value = s1;
+
     sync();
+
   };
 
+
+
+  // Fixed Clock Logic to prevent Chinese Characters
+
   function updateTime() {
+
     const now = new Date();
+
     const timeString = now.toLocaleTimeString('en-US', {
+
       hour: '2-digit',
+
       minute: '2-digit',
+
       second: '2-digit',
+
       hour12: true
+
     });
+
     document.getElementById('clock-pos').innerText = timeString;
+
   }
 
+
+
   setInterval(updateTime, 1000);
+
   updateTime();
+
 </script>
+
 </body>
+
 </html>
