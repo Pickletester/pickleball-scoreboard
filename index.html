@@ -2,46 +2,87 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Pickleball Scoreboard</title>
+  <title>Pickleball Scoreboard - Fixed</title>
   <style>
     body { margin: 0; background: black; color: white; font-family: sans-serif; overflow: hidden; }
-    .container { position: relative; width: 832px; height: 384px; display: flex; border: 1px solid #444; }
-    .player-area { width: 245px; display: flex; flex-direction: column; }
-    .player-box { height: 192px; border: 1px solid white; background: #1a365d; display: flex; align-items: center; justify-content: center; }
-    .score-area { width: 110px; border: 1px solid white; background: #808080; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-    .info-panel { flex-grow: 1; padding: 20px; text-align: right; }
-    input { background: none; border: none; color: white; font-weight: bold; text-align: center; width: 100%; outline: none; }
-    .input-p { font-size: 24px; }
-    .input-s { font-size: 85px; }
-    .controls button { background: #333; color: white; border: 1px solid white; cursor: pointer; padding: 5px 10px; margin: 2px; }
-    #clock { font-size: 18px; margin-top: 50px; }
+    
+    /* Main container matches your image size exactly to prevent squeezing */
+    .container { 
+      position: relative; 
+      width: 832px; 
+      height: 384px; 
+      background-image: url('BackgroundSB.png');
+      background-size: 100% 100%;
+      background-repeat: no-repeat;
+      overflow: hidden;
+    }
+
+    /* Common overlay settings */
+    .overlay { position: absolute; font-weight: bold; text-align: center; }
+    input { background: none; border: none; color: white; font-weight: bold; text-align: center; outline: none; width: 100%; }
+
+    /* Player Positioning based on your BackgroundSB.png boxes */
+    .player { width: 220px; font-size: 32px; }
+    #p4-pos { top: 75px; left: 15px; }
+    #p3-pos { top: 270px; left: 15px; }
+    #p1-pos { top: 75px; left: 490px; }
+    #p2-pos { top: 270px; left: 490px; }
+
+    /* Score Positioning */
+    .score-wrap { width: 110px; }
+    .input-s { font-size: 130px; }
+    #s1-pos { top: 100px; left: 245px; }
+    #s2-pos { top: 100px; left: 355px; }
+
+    /* Controls (Hidden on LED if desired) */
+    .controls { display: flex; gap: 5px; justify-content: center; margin-top: -20px; }
+    .btn { background: #444; color: white; border: 1px solid white; cursor: pointer; padding: 2px 10px; }
+
+    /* Info Panel Positioning (Right Side) */
+    .info-wrap { left: 720px; width: 112px; text-align: center; }
+    #event-pos { top: 20px; }
+    #games-pos { top: 120px; }
+    #clock-pos { top: 240px; font-size: 18px; color: #00ffcc; width: 112px; }
+    #swap-pos { top: 320px; left: 725px; }
+
+    .label { font-size: 14px; color: #aaa; text-transform: uppercase; display: block; }
+    .input-info { font-size: 22px; }
   </style>
 </head>
 <body>
 
 <div class="container">
-  <div class="player-area">
-    <div class="player-box"><input id="p4" class="input-p" value="PLAYER 4"></div>
-    <div class="player-box"><input id="p3" class="input-p" value="PLAYER 3"></div>
-  </div>
-  <div class="score-area">
+  <div id="p4-pos" class="overlay player"><input id="p4" value="PLAYER 4"></div>
+  <div id="p3-pos" class="overlay player"><input id="p3" value="PLAYER 3"></div>
+  <div id="p1-pos" class="overlay player"><input id="p1" value="PLAYER 1"></div>
+  <div id="p2-pos" class="overlay player"><input id="p2" value="PLAYER 2"></div>
+
+  <div id="s1-pos" class="overlay score-wrap">
     <input id="score1" class="input-s" value="0">
-    <div class="controls"><button onclick="adjust('score1', 1)">▲</button><button onclick="adjust('score1', -1)">▼</button></div>
+    <div class="controls">
+      <button class="btn" onclick="adjust('score1', 1)">▲</button>
+      <button class="btn" onclick="adjust('score1', -1)">▼</button>
+    </div>
   </div>
-  <div class="score-area">
+  <div id="s2-pos" class="overlay score-wrap">
     <input id="score2" class="input-s" value="0">
-    <div class="controls"><button onclick="adjust('score2', 1)">▲</button><button onclick="adjust('score2', -1)">▼</button></div>
+    <div class="controls">
+      <button class="btn" onclick="adjust('score2', 1)">▲</button>
+      <button class="btn" onclick="adjust('score2', -1)">▼</button>
+    </div>
   </div>
-  <div class="player-area">
-    <div class="player-box"><input id="p1" class="input-p" value="PLAYER 1"></div>
-    <div class="player-box"><input id="p2" class="input-p" value="PLAYER 2"></div>
+
+  <div id="event-pos" class="overlay info-wrap">
+    <span class="label">EVENT</span>
+    <input id="event" class="input-info" value="TOURNAMENT">
   </div>
-  <div class="info-panel">
-    EVENT NAME<br><input id="event" value="TOURNAMENT" style="text-align:right;"><br><br>
-    GAMES<br><input id="games" value="0-0, 0-0" style="text-align:right;"><br>
-    <div id="clock">00:00:00 PM</div>
-    <button onclick="swap()" style="margin-top:20px; background: #444; color:white; border:1px solid white; cursor:pointer;">SWAP SIDES</button>
+  <div id="games-pos" class="overlay info-wrap">
+    <span class="label">GAMES</span>
+    <input id="games" class="input-info" value="0-0, 0-0">
   </div>
+  <div id="clock-pos" class="overlay">00:00:00 PM</div>
+  
+  <button id="swap-pos" class="overlay btn" style="width:100px;" onclick="swap()">SWAP</button>
 </div>
 
 <script type="module">
@@ -57,30 +98,27 @@
   const db = getDatabase(app);
   const dbRef = ref(db, 'scoreboard');
 
-  // Listen for updates from other browsers
   onValue(dbRef, (snapshot) => {
     const data = snapshot.val();
     if (data) {
       Object.keys(data).forEach(id => {
         const el = document.getElementById(id);
-        if (el && el.value !== data[id]) el.value = data[id];
+        if (el && el.value !== String(data[id])) el.value = data[id];
       });
     }
   });
 
-  // Function to send data to Firebase
   function sync() {
     const data = {};
     document.querySelectorAll('input').forEach(el => data[el.id] = el.value);
     set(dbRef, data);
   }
 
-  // Attach sync to all inputs
   document.querySelectorAll('input').forEach(el => el.oninput = sync);
 
   window.adjust = (id, amt) => {
     const el = document.getElementById(id);
-    el.value = Math.max(0, parseInt(el.value) + amt);
+    el.value = Math.max(0, parseInt(el.value || 0) + amt);
     sync();
   };
 
@@ -94,9 +132,20 @@
     sync();
   };
 
-  setInterval(() => {
-    document.getElementById('clock').innerText = new Date().toLocaleTimeString();
-  }, 1000);
+  // Fixed Clock Logic to prevent Chinese Characters
+  function updateTime() {
+    const now = new Date();
+    const timeString = now.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true
+    });
+    document.getElementById('clock-pos').innerText = timeString;
+  }
+
+  setInterval(updateTime, 1000);
+  updateTime();
 </script>
 </body>
 </html>
