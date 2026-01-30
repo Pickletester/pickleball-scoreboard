@@ -2,334 +2,164 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Pickleball Scoreboard</title>
+  <title>Pickleball Scoreboard - PeerSync</title>
+  <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
   <style>
-    body {
-      margin: 0;
-      background-color: black;
-    }
+    body { margin: 0; background-color: black; color: white; font-family: 'Segoe UI', Arial, sans-serif; overflow: hidden; }
     .container {
       position: relative;
-      width: 845px;
-      height: 314px;
-      background: url('BackgroundSB.png') no-repeat center center;
+      width: 832px;
+      height: 384px;
+      background: #1a1a1a url('BackgroundSB.png') no-repeat center center;
       background-size: cover;
-      font-family: Arial, sans-serif;
-      color: white;
+      border: 1px solid #333;
     }
-    .text {
-      position: absolute;
-      font-weight: bold;
-      color: white;
-    }
-    .player {
-      font-size: 16px;
-    }
-    .score {
-      font-size: 64px;
-    }
+    .text { position: absolute; font-weight: bold; text-transform: uppercase; }
+    input { background: none; border: none; color: white; font-weight: bold; font-family: inherit; text-align: center; outline: none; }
+    
+    /* Player Positions */
+    #p1-wrap { top: 70px; left: 60px; }
+    #p2-wrap { bottom: 70px; left: 60px; }
+    #p3-wrap { bottom: 70px; right: 260px; }
+    #p4-wrap { top: 70px; right: 260px; }
+    
+    /* Scores */
+    #score1Container { top: 120px; left: 245px; }
+    #score2Container { top: 120px; left: 345px; }
+    
+    /* Header/Footer Info */
+    #eventNameWrap { top: 20px; right: 25px; text-align: right; }
+    #gameScoreWrap { top: 110px; right: 25px; text-align: right; }
+    #currentTime { bottom: 20px; right: 25px; font-size: 18px; color: #00ffcc; }
 
-    #eventName { top: 20px; right: 25px; font-size: 15px; }
-    #gameLabel { top: 100px; right: 55px; font-size: 12px; opacity: 0.8; }
-    #gameScore { top: 120px; right: 25px; font-size: 16px; }
-    #currentTime { bottom: 20px; right: 25px; font-size: 16px; }
+    .input-small { font-size: 16px; width: 140px; border-bottom: 1px transparent; }
+    input:focus { border-bottom: 1px solid #00ffcc; }
+    .input-score { font-size: 80px; width: 85px; color: #fff; text-shadow: 0 0 10px rgba(0,255,204,0.5); }
+    
+    .controls { display: flex; flex-direction: column; gap: 5px; margin-top: 5px; }
+    .btn { background: #333; border: 1px solid #555; color: white; cursor: pointer; padding: 2px 8px; font-size: 12px; }
+    .btn:hover { background: #444; }
 
-    #player1 { top: 75px; right: 260px; }
-    #player2 { bottom: 75px; right: 260px; }
-    #player3 { bottom: 75px; left: 60px; }
-    #player4 { top: 75px; left: 60px; }
-
-    #score1Container { top: 100px; left: 240px; }
-    #score2Container { top: 100px; left: 340px; }
-
-    .scoreContainer {
-      position: absolute;
-      text-align: center;
-    }
-
-    input {
-      background: none;
-      border: none;
-      color: white;
-      font-weight: bold;
-      font-family: inherit;
-      text-align: center;
-    }
-
-    .input-small {
-      font-size: 14px;
-      width: 100px;
-    }
-
-    .input-score {
-      font-size: 64px;
-      width: 70px;
-    }
-
-    .control {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      margin-top: 2px;
-      gap: 2px;
-    }
-
-    .control button,
-    .swap-btn {
-      background: rgba(255, 255, 255, 0.1);
-      border: 1px solid #ccc;
-      color: white;
-      font-weight: bold;
-      cursor: pointer;
-    }
-
-    .control button {
-      width: 25px;
-      height: 25px;
-    }
-
-    .swap-btn {
-      position: absolute;
-      bottom: 0px;
-      left: 38%;
-      transform: translateX(-50%);
-      padding: 1px 12px;
-      font-size: 12px;
-      border-radius: 4px;
-    }
-
-    .hidden-on-led {
-      display: block;
-    }
-
-    /* Optional: hide controls on LED screen (uncomment this for the LED version) */
-    /*
-    .hidden-on-led {
-      display: none !important;
-    }
-    */
+    /* Peer Status Overlay */
+    #status { position: absolute; bottom: 5px; left: 5px; font-size: 10px; color: #666; }
+    .hidden-ui { display: none; }
   </style>
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
 </head>
 <body>
-  <div class="container">
-    <div id="eventName" class="text">
-      <input id="eventNameInput" class="input-small" value="EVENT NAME" />
-    </div>
-    <div id="gameLabel" class="text">GAMES</div>
-    <div id="gameScore" class="text">
-      <input id="gameScoreInput" class="input-small" value="0-0, 0-0" />
-    </div>
-    <div id="currentTime" class="text">TIME</div>
 
-    <div id="player1" class="text player"><input id="p1" class="input-small" value="PLAYER 1" /></div>
-    <div id="player2" class="text player"><input id="p2" class="input-small" value="PLAYER 2" /></div>
-    <div id="player3" class="text player"><input id="p3" class="input-small" value="PLAYER 3" /></div>
-    <div id="player4" class="text player"><input id="p4" class="input-small" value="PLAYER 4" /></div>
-
-    <div id="score1Container" class="text scoreContainer">
-      <div class="score"><input id="score1" class="input-score" value="0" /></div>
-      <div class="control hidden-on-led">
-        <button onclick="adjustScore('score1', 1)">▲</button>
-        <button onclick="adjustScore('score1', -1)">▼</button>
-      </div>
-    </div>
-
-    <div id="score2Container" class="text scoreContainer">
-      <div class="score"><input id="score2" class="input-score" value="0" /></div>
-      <div class="control hidden-on-led">
-        <button onclick="adjustScore('score2', 1)">▲</button>
-        <button onclick="adjustScore('score2', -1)">▼</button>
-      </div>
-    </div>
-
-    <button class="swap-btn hidden-on-led" onclick="swapSides()">Swap Sides</button>
+<div class="container" id="board">
+  <div id="eventNameWrap" class="text">
+    <input id="eventName" class="input-small" value="TOURNAMENT" oninput="syncData()">
   </div>
 
-  <script>
-    // Firebase configuration
-    const firebaseConfig = {
-      apiKey: "AIzaSyD_unRHQhjXS0JZ1ON-4u0KfNX4lIqNlbU",
-      authDomain: "pickleballscoreboard-a963e.firebaseapp.com",
-      databaseURL: "https://pickleballscoreboard-a963e-default-rtdb.firebaseio.com",
-      projectId: "pickleballscoreboard-a963e",
-      storageBucket: "pickleballscoreboard-a963e.appspot.com",
-      messagingSenderId: "858315041471",
-      appId: "1:858315041471:web:59bf87df2f4dae68de740a",
-      measurementId: "G-N1Y4292E8V"
-    };
+  <div id="gameScoreWrap" class="text">
+    <div style="font-size: 10px; opacity: 0.6;">GAMES</div>
+    <input id="gameScore" class="input-small" value="0-0, 0-0" oninput="syncData()">
+  </div>
 
-    // Initialize Firebase
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+  <div id="p4-wrap" class="text"><input id="p4" class="input-small" value="PLAYER 4" oninput="syncData()"></div>
+  <div id="p3-wrap" class="text"><input id="p3" class="input-small" value="PLAYER 3" oninput="syncData()"></div>
+  <div id="p2-wrap" class="text"><input id="p2" class="input-small" value="PLAYER 2" oninput="syncData()"></div>
+  <div id="p1-wrap" class="text"><input id="p1" class="input-small" value="PLAYER 1" oninput="syncData()"></div>
 
-    // Fields to sync
-    const fields = {
-      eventNameInput: 'eventName',
-      gameScoreInput: 'gameScore',
-      p1: 'p1',
-      p2: 'p2',
-      p3: 'p3',
-      p4: 'p4',
-      score1: 'score1',
-      score2: 'score2'
-    };
+  <div id="score1Container" class="text">
+    <input id="score1" class="input-score" value="0" oninput="syncData()">
+    <div class="controls admin-only">
+      <button class="btn" onclick="adjust('score1', 1)">▲</button>
+      <button class="btn" onclick="adjust('score1', -1)">▼</button>
+    </div>
+  </div>
 
-    // Set up syncing for each field
-    Object.entries(fields).forEach(([inputId, dbKey]) => {
-      const input = document.getElementById(inputId);
-      // Update Firebase on input change
-      input.addEventListener('input', () => {
-        db.ref('scoreboard/' + dbKey).set(input.value);
-      });
-      // Listen for Firebase changes and update input
-      db.ref('scoreboard/' + dbKey).on('value', snapshot => {
-        const val = snapshot.val();
-        if (val !== null && input.value !== val) {
-          input.value = val;
-        }
-      });
-    });
+  <div id="score2Container" class="text">
+    <input id="score2" class="input-score" value="0" oninput="syncData()">
+    <div class="controls admin-only">
+      <button class="btn" onclick="adjust('score2', 1)">▲</button>
+      <button class="btn" onclick="adjust('score2', -1)">▼</button>
+    </div>
+  </div>
 
-    function updateTime() {
-      const now = new Date();
-      const options = {
-        timeZone: 'America/New_York',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: true
-      };
-      const formatter = new Intl.DateTimeFormat('en-US', options);
-      document.getElementById('currentTime').textContent = formatter.format(now);
+  <div id="currentTime" class="text">00:00:00 AM</div>
+  
+  <div id="status">ID: <span id="my-id">...</span></div>
+  <button id="swapBtn" class="btn admin-only" style="position:absolute; bottom:20px; left:20px;" onclick="swap()">SWAP SIDES</button>
+</div>
+
+<script>
+  const peer = new Peer();
+  let conn = null;
+  const urlParams = new URLSearchParams(window.location.search);
+  const remoteId = urlParams.get('join');
+
+  // 1. Peer Setup
+  peer.on('open', (id) => {
+    document.getElementById('my-id').innerText = id;
+    if (remoteId) {
+      connectToHost(remoteId);
+    } else {
+      console.log("Host Mode. Share this link to control: " + window.location.href + "?join=" + id);
     }
-
-    function adjustScore(id, delta) {
-      const input = document.getElementById(id);
-      let current = parseInt(input.value) || 0;
-      current = Math.max(0, current + delta);
-      input.value = current;
-      // Sync to Firebase
-      db.ref('scoreboard/' + id).set(input.value);
-    }
-
-    function swapSides() {
-      let tempP1 = document.getElementById('p1').value;
-      let tempP2 = document.getElementById('p2').value;
-      let tempScore1 = document.getElementById('score1').value;
-
-      document.getElementById('p1').value = document.getElementById('p4').value;
-      document.getElementById('p2').value = document.getElementById('p3').value;
-      document.getElementById('score1').value = document.getElementById('score2').value;
-
-      document.getElementById('p4').value = tempP1;
-      document.getElementById('p3').value = tempP2;
-      document.getElementById('score2').value = tempScore1;
-
-      // Sync swapped values to Firebase
-      Object.entries(fields).forEach(([inputId, dbKey]) => {
-        if (['p1', 'p2', 'p3', 'p4', 'score1', 'score2'].includes(inputId)) {
-          db.ref('scoreboard/' + dbKey).set(document.getElementById(inputId).value);
-        }
-      });
-    }
-
-    setInterval(updateTime, 1000);
-    updateTime();
-  </script>
-</body>
-</html>
-<!-- Firebase Modular SDK -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-  import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyD_unRHQhjXS0JZ1ON-4u0KfNX4lIqNlbU",
-    authDomain: "pickleballscoreboard-a963e.firebaseapp.com",
-    databaseURL: "https://pickleballscoreboard-a963e-default-rtdb.firebaseio.com",
-    projectId: "pickleballscoreboard-a963e",
-    storageBucket: "pickleballscoreboard-a963e.appspot.com",
-    messagingSenderId: "858315041471",
-    appId: "1:858315041471:web:59bf87df2f4dae68de740a",
-    measurementId: "G-N1Y4292E8V"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const db = getDatabase(app);
-
-  const fields = {
-    eventNameInput: 'eventName',
-    gameScoreInput: 'gameScore',
-    p1: 'p1',
-    p2: 'p2',
-    p3: 'p3',
-    p4: 'p4',
-    score1: 'score1',
-    score2: 'score2'
-  };
-
-  Object.entries(fields).forEach(([inputId, dbKey]) => {
-    const input = document.getElementById(inputId);
-    if (!input) return;
-
-    // Write to Firebase on input
-    input.addEventListener('input', () => {
-      set(ref(db, 'scoreboard/' + dbKey), input.value);
-    });
-
-    // Listen for Firebase updates
-    onValue(ref(db, 'scoreboard/' + dbKey), snapshot => {
-      const val = snapshot.val();
-      if (val !== null && input.value !== val) {
-        input.value = val;
-      }
-    });
   });
 
-  // Score adjustment logic
-  window.adjustScore = function(id, delta) {
-    const input = document.getElementById(id);
-    let current = parseInt(input.value) || 0;
-    current = Math.max(0, current + delta);
-    input.value = current;
-    set(ref(db, 'scoreboard/' + id), input.value);
-  };
+  // 2. Host Logic: Listen for connections
+  peer.on('connection', (connection) => {
+    conn = connection;
+    setupConn();
+  });
 
-  window.swapSides = function() {
-    const swapMap = {
-      p1: 'p4',
-      p2: 'p3',
-      p3: 'p2',
-      p4: 'p1',
-      score1: 'score2',
-      score2: 'score1'
-    };
-
-    Object.entries(swapMap).forEach(([a, b]) => {
-      const valA = document.getElementById(a).value;
-      const valB = document.getElementById(b).value;
-      document.getElementById(a).value = valB;
-      document.getElementById(b).value = valA;
-      set(ref(db, 'scoreboard/' + a), valB);
-      set(ref(db, 'scoreboard/' + b), valA);
-    });
-  };
-
-  function updateTime() {
-    const now = new Date();
-    const formatter = new Intl.DateTimeFormat('en-US', {
-      timeZone: 'America/New_York',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: true
-    });
-    document.getElementById('currentTime').textContent = formatter.format(now);
+  function connectToHost(id) {
+    conn = peer.connect(id);
+    setupConn();
   }
 
-  setInterval(updateTime, 1000);
-  updateTime();
+  function setupConn() {
+    conn.on('data', (data) => {
+      // Update UI with received data
+      Object.keys(data).forEach(key => {
+        const el = document.getElementById(key);
+        if (el) el.value = data[key];
+      });
+    });
+    document.getElementById('status').innerText = "Connected";
+  }
+
+  // 3. Data Sync Logic
+  function syncData() {
+    if (!conn) return;
+    const data = {
+      eventName: document.getElementById('eventName').value,
+      gameScore: document.getElementById('gameScore').value,
+      p1: document.getElementById('p1').value,
+      p2: document.getElementById('p2').value,
+      p3: document.getElementById('p3').value,
+      p4: document.getElementById('p4').value,
+      score1: document.getElementById('score1').value,
+      score2: document.getElementById('score2').value,
+    };
+    conn.send(data);
+  }
+
+  // 4. Score Adjustments
+  window.adjust = (id, amt) => {
+    const el = document.getElementById(id);
+    el.value = Math.max(0, parseInt(el.value || 0) + amt);
+    syncData();
+  };
+
+  window.swap = () => {
+    const p1 = document.getElementById('p1').value, p2 = document.getElementById('p2').value,
+          p3 = document.getElementById('p3').value, p4 = document.getElementById('p4').value,
+          s1 = document.getElementById('score1').value, s2 = document.getElementById('score2').value;
+    
+    document.getElementById('p1').value = p4; document.getElementById('p4').value = p1;
+    document.getElementById('p2').value = p3; document.getElementById('p3').value = p2;
+    document.getElementById('score1').value = s2; document.getElementById('score2').value = s1;
+    syncData();
+  };
+
+  // 5. Clock
+  setInterval(() => {
+    document.getElementById('currentTime').innerText = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'});
+  }, 1000);
 </script>
+</body>
+</html>
