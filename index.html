@@ -1,164 +1,101 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Pickleball Scoreboard - PeerSync</title>
-  <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+  <meta charset="UTF-8">
+  <title>Pickleball Scoreboard</title>
   <style>
-    body { margin: 0; background-color: black; color: white; font-family: 'Segoe UI', Arial, sans-serif; overflow: hidden; }
-    .container {
-      position: relative;
-      width: 832px;
-      height: 384px;
-      background: #1a1a1a url('BackgroundSB.png') no-repeat center center;
-      background-size: cover;
-      border: 1px solid #333;
-    }
-    .text { position: absolute; font-weight: bold; text-transform: uppercase; }
-    input { background: none; border: none; color: white; font-weight: bold; font-family: inherit; text-align: center; outline: none; }
-    
-    /* Player Positions */
-    #p1-wrap { top: 70px; left: 60px; }
-    #p2-wrap { bottom: 70px; left: 60px; }
-    #p3-wrap { bottom: 70px; right: 260px; }
-    #p4-wrap { top: 70px; right: 260px; }
-    
-    /* Scores */
-    #score1Container { top: 120px; left: 245px; }
-    #score2Container { top: 120px; left: 345px; }
-    
-    /* Header/Footer Info */
-    #eventNameWrap { top: 20px; right: 25px; text-align: right; }
-    #gameScoreWrap { top: 110px; right: 25px; text-align: right; }
-    #currentTime { bottom: 20px; right: 25px; font-size: 18px; color: #00ffcc; }
-
-    .input-small { font-size: 16px; width: 140px; border-bottom: 1px transparent; }
-    input:focus { border-bottom: 1px solid #00ffcc; }
-    .input-score { font-size: 80px; width: 85px; color: #fff; text-shadow: 0 0 10px rgba(0,255,204,0.5); }
-    
-    .controls { display: flex; flex-direction: column; gap: 5px; margin-top: 5px; }
-    .btn { background: #333; border: 1px solid #555; color: white; cursor: pointer; padding: 2px 8px; font-size: 12px; }
-    .btn:hover { background: #444; }
-
-    /* Peer Status Overlay */
-    #status { position: absolute; bottom: 5px; left: 5px; font-size: 10px; color: #666; }
-    .hidden-ui { display: none; }
+    body { margin: 0; background: black; color: white; font-family: sans-serif; overflow: hidden; }
+    .container { position: relative; width: 832px; height: 384px; display: flex; border: 1px solid #444; }
+    .player-area { width: 245px; display: flex; flex-direction: column; }
+    .player-box { height: 192px; border: 1px solid white; background: #1a365d; display: flex; align-items: center; justify-content: center; }
+    .score-area { width: 110px; border: 1px solid white; background: #808080; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .info-panel { flex-grow: 1; padding: 20px; text-align: right; }
+    input { background: none; border: none; color: white; font-weight: bold; text-align: center; width: 100%; outline: none; }
+    .input-p { font-size: 24px; }
+    .input-s { font-size: 100px; }
+    .controls button { background: #333; color: white; border: 1px solid white; cursor: pointer; padding: 5px 10px; margin: 2px; }
+    #clock { font-size: 18px; margin-top: 50px; }
   </style>
 </head>
 <body>
 
-<div class="container" id="board">
-  <div id="eventNameWrap" class="text">
-    <input id="eventName" class="input-small" value="TOURNAMENT" oninput="syncData()">
+<div class="container">
+  <div class="player-area">
+    <div class="player-box"><input id="p4" class="input-p" value="PLAYER 4"></div>
+    <div class="player-box"><input id="p3" class="input-p" value="PLAYER 3"></div>
   </div>
-
-  <div id="gameScoreWrap" class="text">
-    <div style="font-size: 10px; opacity: 0.6;">GAMES</div>
-    <input id="gameScore" class="input-small" value="0-0, 0-0" oninput="syncData()">
+  <div class="score-area">
+    <input id="score1" class="input-s" value="0">
+    <div class="controls"><button onclick="adjust('score1', 1)">▲</button><button onclick="adjust('score1', -1)">▼</button></div>
   </div>
-
-  <div id="p4-wrap" class="text"><input id="p4" class="input-small" value="PLAYER 4" oninput="syncData()"></div>
-  <div id="p3-wrap" class="text"><input id="p3" class="input-small" value="PLAYER 3" oninput="syncData()"></div>
-  <div id="p2-wrap" class="text"><input id="p2" class="input-small" value="PLAYER 2" oninput="syncData()"></div>
-  <div id="p1-wrap" class="text"><input id="p1" class="input-small" value="PLAYER 1" oninput="syncData()"></div>
-
-  <div id="score1Container" class="text">
-    <input id="score1" class="input-score" value="0" oninput="syncData()">
-    <div class="controls admin-only">
-      <button class="btn" onclick="adjust('score1', 1)">▲</button>
-      <button class="btn" onclick="adjust('score1', -1)">▼</button>
-    </div>
+  <div class="score-area">
+    <input id="score2" class="input-s" value="0">
+    <div class="controls"><button onclick="adjust('score2', 1)">▲</button><button onclick="adjust('score2', -1)">▼</button></div>
   </div>
-
-  <div id="score2Container" class="text">
-    <input id="score2" class="input-score" value="0" oninput="syncData()">
-    <div class="controls admin-only">
-      <button class="btn" onclick="adjust('score2', 1)">▲</button>
-      <button class="btn" onclick="adjust('score2', -1)">▼</button>
-    </div>
+  <div class="player-area">
+    <div class="player-box"><input id="p1" class="input-p" value="PLAYER 1"></div>
+    <div class="player-box"><input id="p2" class="input-p" value="PLAYER 2"></div>
   </div>
-
-  <div id="currentTime" class="text">00:00:00 AM</div>
-  
-  <div id="status">ID: <span id="my-id">...</span></div>
-  <button id="swapBtn" class="btn admin-only" style="position:absolute; bottom:20px; left:20px;" onclick="swap()">SWAP SIDES</button>
+  <div class="info-panel">
+    EVENT NAME<br><input id="event" value="TOURNAMENT" style="text-align:right;"><br><br>
+    GAMES<br><input id="games" value="0-0, 0-0" style="text-align:right;"><br>
+    <div id="clock">00:00:00 PM</div>
+    <button onclick="swap()" style="margin-top:20px; background: #444; color:white; border:1px solid white; cursor:pointer;">SWAP SIDES</button>
+  </div>
 </div>
 
-<script>
-  const peer = new Peer();
-  let conn = null;
-  const urlParams = new URLSearchParams(window.location.search);
-  const remoteId = urlParams.get('join');
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+  import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
 
-  // 1. Peer Setup
-  peer.on('open', (id) => {
-    document.getElementById('my-id').innerText = id;
-    if (remoteId) {
-      connectToHost(remoteId);
-    } else {
-      console.log("Host Mode. Share this link to control: " + window.location.href + "?join=" + id);
+  const firebaseConfig = {
+    databaseURL: "https://pickleballscoreboard-a963e-default-rtdb.firebaseio.com",
+    projectId: "pickleballscoreboard-a963e",
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  const dbRef = ref(db, 'scoreboard');
+
+  // Listen for updates from other browsers
+  onValue(dbRef, (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+      Object.keys(data).forEach(id => {
+        const el = document.getElementById(id);
+        if (el && el.value !== data[id]) el.value = data[id];
+      });
     }
   });
 
-  // 2. Host Logic: Listen for connections
-  peer.on('connection', (connection) => {
-    conn = connection;
-    setupConn();
-  });
-
-  function connectToHost(id) {
-    conn = peer.connect(id);
-    setupConn();
+  // Function to send data to Firebase
+  function sync() {
+    const data = {};
+    document.querySelectorAll('input').forEach(el => data[el.id] = el.value);
+    set(dbRef, data);
   }
 
-  function setupConn() {
-    conn.on('data', (data) => {
-      // Update UI with received data
-      Object.keys(data).forEach(key => {
-        const el = document.getElementById(key);
-        if (el) el.value = data[key];
-      });
-    });
-    document.getElementById('status').innerText = "Connected";
-  }
+  // Attach sync to all inputs
+  document.querySelectorAll('input').forEach(el => el.oninput = sync);
 
-  // 3. Data Sync Logic
-  function syncData() {
-    if (!conn) return;
-    const data = {
-      eventName: document.getElementById('eventName').value,
-      gameScore: document.getElementById('gameScore').value,
-      p1: document.getElementById('p1').value,
-      p2: document.getElementById('p2').value,
-      p3: document.getElementById('p3').value,
-      p4: document.getElementById('p4').value,
-      score1: document.getElementById('score1').value,
-      score2: document.getElementById('score2').value,
-    };
-    conn.send(data);
-  }
-
-  // 4. Score Adjustments
   window.adjust = (id, amt) => {
     const el = document.getElementById(id);
-    el.value = Math.max(0, parseInt(el.value || 0) + amt);
-    syncData();
+    el.value = Math.max(0, parseInt(el.value) + amt);
+    sync();
   };
 
   window.swap = () => {
-    const p1 = document.getElementById('p1').value, p2 = document.getElementById('p2').value,
-          p3 = document.getElementById('p3').value, p4 = document.getElementById('p4').value,
-          s1 = document.getElementById('score1').value, s2 = document.getElementById('score2').value;
-    
+    const p1 = document.getElementById('p1').value, p2 = document.getElementById('p2').value;
+    const p3 = document.getElementById('p3').value, p4 = document.getElementById('p4').value;
+    const s1 = document.getElementById('score1').value, s2 = document.getElementById('score2').value;
     document.getElementById('p1').value = p4; document.getElementById('p4').value = p1;
     document.getElementById('p2').value = p3; document.getElementById('p3').value = p2;
     document.getElementById('score1').value = s2; document.getElementById('score2').value = s1;
-    syncData();
+    sync();
   };
 
-  // 5. Clock
   setInterval(() => {
-    document.getElementById('currentTime').innerText = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'});
+    document.getElementById('clock').innerText = new Date().toLocaleTimeString();
   }, 1000);
 </script>
 </body>
