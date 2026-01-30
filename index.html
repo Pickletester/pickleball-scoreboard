@@ -2,11 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Pickleball Scoreboard - Fixed</title>
+  <title>Pickleball Scoreboard - Multi-Background</title>
   <style>
     body { margin: 0; background: black; color: white; font-family: sans-serif; overflow: hidden; }
     
-    /* Main container matches your image size exactly to prevent squeezing */
+    /* Main container matches your image size exactly */
     .container { 
       position: relative; 
       width: 832px; 
@@ -17,11 +17,24 @@
       overflow: hidden;
     }
 
+    /* RIGHT SIDE BAR IMAGE */
+    .sidebar-bg {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 112px; /* Matches the width of your right-hand black area */
+      height: 384px;
+      background-image: url('Side_Bar_Right.png'); /* Ensure the file extension matches your repo */
+      background-size: 100% 100%;
+      background-repeat: no-repeat;
+      z-index: 0;
+    }
+
     /* Common overlay settings */
-    .overlay { position: absolute; font-weight: bold; text-align: center; }
+    .overlay { position: absolute; font-weight: bold; text-align: center; z-index: 1; }
     input { background: none; border: none; color: white; font-weight: bold; text-align: center; outline: none; width: 100%; }
 
-    /* Player Positioning based on your BackgroundSB.png boxes */
+    /* Player Positioning */
     .player { width: 220px; font-size: 32px; }
     #p4-pos { top: 75px; left: 15px; }
     #p3-pos { top: 270px; left: 15px; }
@@ -34,16 +47,16 @@
     #s1-pos { top: 100px; left: 245px; }
     #s2-pos { top: 100px; left: 355px; }
 
-    /* Controls (Hidden on LED if desired) */
+    /* Controls */
     .controls { display: flex; gap: 5px; justify-content: center; margin-top: -20px; }
     .btn { background: #444; color: white; border: 1px solid white; cursor: pointer; padding: 2px 10px; }
 
-    /* Info Panel Positioning (Right Side) */
-    .info-wrap { left: 720px; width: 112px; text-align: center; }
+    /* Info Panel Positioning (On top of Side_Bar_Right) */
+    .info-wrap { right: 0px; width: 112px; text-align: center; }
     #event-pos { top: 20px; }
     #games-pos { top: 120px; }
     #clock-pos { top: 240px; font-size: 18px; color: #00ffcc; width: 112px; }
-    #swap-pos { top: 320px; left: 725px; }
+    #swap-pos { top: 320px; right: 6px; }
 
     .label { font-size: 14px; color: #aaa; text-transform: uppercase; display: block; }
     .input-info { font-size: 22px; }
@@ -52,6 +65,8 @@
 <body>
 
 <div class="container">
+  <div class="sidebar-bg"></div>
+
   <div id="p4-pos" class="overlay player"><input id="p4" value="PLAYER 4"></div>
   <div id="p3-pos" class="overlay player"><input id="p3" value="PLAYER 3"></div>
   <div id="p1-pos" class="overlay player"><input id="p1" value="PLAYER 1"></div>
@@ -80,7 +95,7 @@
     <span class="label">GAMES</span>
     <input id="games" class="input-info" value="0-0, 0-0">
   </div>
-  <div id="clock-pos" class="overlay">00:00:00 PM</div>
+  <div id="clock-pos" class="overlay info-wrap">00:00:00 PM</div>
   
   <button id="swap-pos" class="overlay btn" style="width:100px;" onclick="swap()">SWAP</button>
 </div>
@@ -132,7 +147,6 @@
     sync();
   };
 
-  // Fixed Clock Logic to prevent Chinese Characters
   function updateTime() {
     const now = new Date();
     const timeString = now.toLocaleTimeString('en-US', {
